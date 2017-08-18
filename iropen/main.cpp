@@ -1,53 +1,35 @@
 ﻿#include <tchar.h>
 #include <Windows.h>
+#include "checker.hpp"
 
 LRESULT CALLBACK mainWindowProc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM l_param)
 {
-	static int x, y, result;
+	static i16_t x, y, result;
 	static bool is_press;
+	static InputChecker checker;
 
 	switch (message) {
 
 	case WM_POINTERDOWN:
-	{
-		POINTER_INPUT_TYPE type = PT_POINTER;
-		auto id = GET_POINTERID_WPARAM(w_param);
-		GetPointerType(id, &type);
-		switch (type) {
-		case PT_PEN:
-			/*
-			*ペン
-			*/
+		if (checker.is_pen(w_param))
+		{
 			is_press = true;
 			x = LOWORD(l_param);
 			y = HIWORD(l_param);
 			InvalidateRect(h_wnd, NULL, TRUE);
-			break;
-		case PT_TOUCH:
-			/*
-			*タッチ
-			*/
-			break;
-		default:
-			/*
-			*マウス
-			*/
-			break;
 		}
-		return DefWindowProc(h_wnd, message, w_param, l_param);
-	}
-	case WM_POINTERUP:
-		is_press = false;
-		return DefWindowProc(h_wnd, message, w_param, l_param);
+		break;
 	case WM_MOUSEMOVE:
-		if (is_press) 
+		if (is_press)
 		{
 			x = LOWORD(l_param);
 			y = HIWORD(l_param);
 			InvalidateRect(h_wnd, NULL, TRUE);
 		}
-		return 0;
-
+		break;
+	case WM_POINTERUP:
+		is_press = false;
+		break;
 	case WM_ERASEBKGND:
 		return 1;
 	case WM_CREATE:
@@ -72,7 +54,7 @@ LRESULT CALLBACK mainWindowProc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM
 		}
 		RegisterTouchWindow(h_wnd, 0);
 	}
-	return DefWindowProc(h_wnd, message, w_param, l_param);
+	break;
 	
 	case WM_PAINT:
 	{
@@ -86,7 +68,7 @@ LRESULT CALLBACK mainWindowProc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM
 			EndPaint(h_wnd, &ps);
 		}
 	}
-	return 0;
+	break;
 	case WM_CLOSE:
 
 		DestroyWindow(h_wnd);
@@ -101,7 +83,7 @@ LRESULT CALLBACK mainWindowProc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM
 
 }
 
-static ATOM register_window_class(HINSTANCE hInstance, LPCTSTR lpClassName)
+static ATOM register_window_class(HINSTANCE hInstance, LPCTSTR class_name)
 {
 	WNDCLASSEX window_class_ex = { 0 };
 
@@ -116,7 +98,7 @@ static ATOM register_window_class(HINSTANCE hInstance, LPCTSTR lpClassName)
 	window_class_ex.hCursor = LoadCursor(hInstance, IDC_ARROW);
 	window_class_ex.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
 	window_class_ex.lpszMenuName = NULL;
-	window_class_ex.lpszClassName = lpClassName;
+	window_class_ex.lpszClassName = class_name;
 	
 	return RegisterClassEx(&window_class_ex);
 }
