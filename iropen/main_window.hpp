@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Windows.h>
-#include "int_types.hpp"
+#include "types.hpp"
 
 class MainWindow {
 
