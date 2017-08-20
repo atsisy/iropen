@@ -1,10 +1,23 @@
 ﻿#include <tchar.h>
 #include <Windows.h>
+#include <memory>
+
+#ifdef _DEBUG
+
+#include <fstream>
+std::ofstream writing_file;
+
+#endif
+
 #include "checker.hpp"
+#include "int_types.hpp"
+#include "main_window.hpp"
+
+std::unique_ptr<MainWindow> g_main_window;
 
 LRESULT CALLBACK mainWindowProc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM l_param)
 {
-	static i16_t x, y, result;
+	static POINT touch_point;
 	static bool is_press;
 	static InputChecker checker;
 
@@ -13,18 +26,38 @@ LRESULT CALLBACK mainWindowProc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM
 	case WM_POINTERDOWN:
 		if (checker.is_pen(w_param))
 		{
+			int i;
+			POINTER_PEN_INFO info;
+			GetPointerPenInfo(GET_POINTERID_WPARAM(w_param), &info);
+			i = info.pressure;
+
+			writing_file << i << '\n';
+
 			is_press = true;
-			x = LOWORD(l_param);
-			y = HIWORD(l_param);
+			touch_point.x = LOWORD(l_param);
+			touch_point.y = HIWORD(l_param);
 			InvalidateRect(h_wnd, NULL, TRUE);
 		}
 		break;
-	case WM_MOUSEMOVE:
+	case WM_POINTERUPDATE:
 		if (is_press)
 		{
-			x = LOWORD(l_param);
-			y = HIWORD(l_param);
+			int i;
+			POINTER_PEN_INFO info;
+			GetPointerPenInfo(GET_POINTERID_WPARAM(w_param), &info);
+			i = info.pressure;
+
+			touch_point.x = LOWORD(l_param);
+			touch_point.y = HIWORD(l_param);
+			if (ScreenToClient(h_wnd, &touch_point) == 0)
+			{
+				/*
+				*エラー
+				*/
+			}
 			InvalidateRect(h_wnd, NULL, TRUE);
+
+			writing_file << i << '\n';
 		}
 		break;
 	case WM_POINTERUP:
@@ -52,8 +85,12 @@ LRESULT CALLBACK mainWindowProc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM
 		{
 
 		}
+
+		writing_file.open("history.txt");
+
 		RegisterTouchWindow(h_wnd, 0);
 	}
+
 	break;
 	
 	case WM_PAINT:
@@ -64,17 +101,19 @@ LRESULT CALLBACK mainWindowProc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM
 			HDC hdc;
 
 			hdc = BeginPaint(h_wnd, &ps);
-			SetPixel(hdc, x, y, RGB(20, 20, 20));
+			SetPixel(hdc, touch_point.x, touch_point.y, RGB(20, 20, 20));
 			EndPaint(h_wnd, &ps);
 		}
 	}
 	break;
 	case WM_CLOSE:
 
+		writing_file.close();
 		DestroyWindow(h_wnd);
 
 	case WM_DESTROY:
 
+		writing_file.close();
 		PostQuitMessage(0);
 
 	}
@@ -129,22 +168,25 @@ static HWND create_window(HINSTANCE hInstance, LPCTSTR class_name, LPCTSTR title
 		UpdateWindow(hWnd);
 	}
 
+	g_main_window->update_window_info(hWnd);
+
 	return hWnd;
 }
 
-extern int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
+int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
 {
-	LPCTSTR class_name = TEXT("iropen");
-	LPCTSTR window_title = TEXT("iropen");
+	g_main_window.reset(new MainWindow(hInstance, TEXT("iropen"), TEXT("iropen")));
 	MSG message;
 
-	if (!register_window_class(hInstance, class_name)) {
+	if (!register_window_class(g_main_window->get_hinstance(), g_main_window->get_class_name()))
+	{
 		return -1;
 	}
-	if (!create_window(hInstance, class_name, window_title, nCmdShow))
+	if (!create_window(hInstance, g_main_window->get_class_name(), g_main_window->get_title(), nCmdShow))
 	{
 		return -2;
 	}
+
 	while (GetMessage(&message, nullptr, 0, 0) > 0)
 	{
 		TranslateMessage(&message);
