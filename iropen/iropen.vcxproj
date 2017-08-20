@@ -141,10 +141,13 @@
   <ItemGroup>
     <ClCompile Include="checker_src.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="checker.hpp" />
+    <ClInclude Include="child_window.hpp" />
     <ClInclude Include="int_types.hpp" />
+    <ClInclude Include="main_window.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

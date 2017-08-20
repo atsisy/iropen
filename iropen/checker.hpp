@@ -1,8 +1,11 @@
-#pragma once
+﻿#pragma once
 
 #include <Windows.h>
-#include "int_types.hpp"
 
+/**************************************************
+*InputCheckerクラス
+*入力装置を判別する関数オブジェクトクラス
+**************************************************/
 class InputChecker {
 
 private:

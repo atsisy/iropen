@@ -21,12 +21,21 @@
     <ClCompile Include="checker_src.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="window.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="checker.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="int_types.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="child_window.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="main_window.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
