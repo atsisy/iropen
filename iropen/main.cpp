@@ -1,23 +1,18 @@
 ﻿#include <tchar.h>
 #include <Windows.h>
-#include <memory>
-
-#ifdef _DEBUG
-
-#include <fstream>
-std::ofstream writing_file;
-
-#endif
-
+#include <deque>
+#include <algorithm>
 #include "checker.hpp"
-#include "int_types.hpp"
+#include "types.hpp"
 #include "main_window.hpp"
+#include "paint_data.hpp"
 
-std::unique_ptr<MainWindow> g_main_window;
+uptr<MainWindow> g_main_window;
 
 LRESULT CALLBACK mainWindowProc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM l_param)
 {
 	static POINT touch_point;
+	static std::deque<uptr<BitPaintData>> paint_data_queue;
 	static bool is_press;
 	static InputChecker checker;
 
@@ -26,26 +21,25 @@ LRESULT CALLBACK mainWindowProc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM
 	case WM_POINTERDOWN:
 		if (checker.is_pen(w_param))
 		{
-			int i;
+			int pressure;
 			POINTER_PEN_INFO info;
 			GetPointerPenInfo(GET_POINTERID_WPARAM(w_param), &info);
-			i = info.pressure;
-
-			writing_file << i << '\n';
+			pressure = info.pressure;
 
 			is_press = true;
 			touch_point.x = LOWORD(l_param);
 			touch_point.y = HIWORD(l_param);
+			paint_data_queue.push_back(uptr<BitPaintData>(new BitPaintData(touch_point, pressure)));
 			InvalidateRect(h_wnd, NULL, TRUE);
 		}
 		break;
 	case WM_POINTERUPDATE:
 		if (is_press)
 		{
-			int i;
+			u16_t pressure;
 			POINTER_PEN_INFO info;
 			GetPointerPenInfo(GET_POINTERID_WPARAM(w_param), &info);
-			i = info.pressure;
+			pressure = info.pressure;
 
 			touch_point.x = LOWORD(l_param);
 			touch_point.y = HIWORD(l_param);
@@ -55,9 +49,10 @@ LRESULT CALLBACK mainWindowProc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM
 				*エラー
 				*/
 			}
+
+			paint_data_queue.push_back(uptr<BitPaintData>(new BitPaintData(touch_point, pressure)));
 			InvalidateRect(h_wnd, NULL, TRUE);
 
-			writing_file << i << '\n';
 		}
 		break;
 	case WM_POINTERUP:
@@ -86,8 +81,6 @@ LRESULT CALLBACK mainWindowProc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM
 
 		}
 
-		writing_file.open("history.txt");
-
 		RegisterTouchWindow(h_wnd, 0);
 	}
 
@@ -99,23 +92,35 @@ LRESULT CALLBACK mainWindowProc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM
 		{
 			PAINTSTRUCT ps;
 			HDC hdc;
-
+			
 			hdc = BeginPaint(h_wnd, &ps);
-			SetPixel(hdc, touch_point.x, touch_point.y, RGB(20, 20, 20));
+			
+			while (!paint_data_queue.empty())
+			{
+				uptr<BitPaintData> bpd = std::move(*std::make_move_iterator(std::begin(paint_data_queue)));
+				u8_t r = (bpd->pressure / 70) / 2;
+				Ellipse(hdc, bpd->point.x - r, bpd->point.y - r, bpd->point.x + r, bpd->point.y + r);
+				paint_data_queue.pop_front();
+			}
+
 			EndPaint(h_wnd, &ps);
 		}
 	}
 	break;
+
+	case WM_SIZE:
+	case WM_MOVE:
+		g_main_window->update_window_info(h_wnd);
+		break;
 	case WM_CLOSE:
 
-		writing_file.close();
 		DestroyWindow(h_wnd);
+		break;
 
 	case WM_DESTROY:
 
-		writing_file.close();
 		PostQuitMessage(0);
-
+		break;
 	}
 
 	return DefWindowProc(h_wnd, message, w_param, l_param);
