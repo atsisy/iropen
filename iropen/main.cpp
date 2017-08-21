@@ -6,6 +6,7 @@
 #include "types.hpp"
 #include "main_window.hpp"
 #include "paint_data.hpp"
+#include "gesture.hpp"
 
 uptr<MainWindow> g_main_window;
 
@@ -15,9 +16,13 @@ LRESULT CALLBACK mainWindowProc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM
 	static std::deque<uptr<BitPaintData>> paint_data_queue;
 	static bool is_press;
 	static InputChecker checker;
+	static GestureDecoder gesture_decoder;
 
 	switch (message) {
 
+	case WM_GESTURE:
+		return gesture_decoder(h_wnd, message, w_param, l_param);
+	break;
 	case WM_POINTERDOWN:
 		if (checker.is_pen(w_param))
 		{
@@ -55,9 +60,6 @@ LRESULT CALLBACK mainWindowProc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM
 
 		}
 		break;
-	case WM_POINTERUP:
-		is_press = false;
-		break;
 	case WM_ERASEBKGND:
 		return 1;
 	case WM_CREATE:
@@ -80,8 +82,6 @@ LRESULT CALLBACK mainWindowProc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM
 		{
 
 		}
-
-		RegisterTouchWindow(h_wnd, 0);
 	}
 
 	break;
@@ -107,7 +107,15 @@ LRESULT CALLBACK mainWindowProc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM
 		}
 	}
 	break;
-
+	
+	case WM_POINTERLEAVE:
+	case WM_POINTERUP:
+		if (checker.is_pen(w_param))
+		{
+			UnregisterTouchWindow(h_wnd);
+			is_press = false;
+		}
+		break;
 	case WM_SIZE:
 	case WM_MOVE:
 		g_main_window->update_window_info(h_wnd);

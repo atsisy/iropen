@@ -140,6 +140,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="checker_src.cpp" />
+    <ClCompile Include="gesture_src.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="paint_data_src.cpp" />
     <ClCompile Include="window.cpp" />
@@ -147,6 +148,7 @@
   <ItemGroup>
     <ClInclude Include="checker.hpp" />
     <ClInclude Include="child_window.hpp" />
+    <ClInclude Include="gesture.hpp" />
     <ClInclude Include="types.hpp" />
     <ClInclude Include="main_window.hpp" />
     <ClInclude Include="paint_data.hpp" />
