@@ -1,0 +1,11 @@
+IROPEN_MENU MENU {
+	POPUP "FILE" {
+		MENUITEM "open", 40001
+		MENUITEM "save", 40002
+		MENUITEM "quit", 40003
+	}
+	POPUP "VIEW" {
+		MENUITEM "zoom", 40004
+		MENUITEM "rotate", 40005
+	}
+}

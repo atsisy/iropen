@@ -7,6 +7,7 @@
 #include "main_window.hpp"
 #include "paint_data.hpp"
 #include "gesture.hpp"
+#include "resource.h"
 
 uptr<MainWindow> g_main_window;
 
@@ -149,7 +150,7 @@ static ATOM register_window_class(HINSTANCE hInstance, LPCTSTR class_name)
 	window_class_ex.hIconSm = nullptr;
 	window_class_ex.hCursor = LoadCursor(hInstance, IDC_ARROW);
 	window_class_ex.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
-	window_class_ex.lpszMenuName = NULL;
+	window_class_ex.lpszMenuName = TEXT("IROPEN_MENU");
 	window_class_ex.lpszClassName = class_name;
 	
 	return RegisterClassEx(&window_class_ex);

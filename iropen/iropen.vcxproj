@@ -43,7 +43,7 @@
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -149,9 +149,13 @@
     <ClInclude Include="checker.hpp" />
     <ClInclude Include="child_window.hpp" />
     <ClInclude Include="gesture.hpp" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="types.hpp" />
     <ClInclude Include="main_window.hpp" />
     <ClInclude Include="paint_data.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="iropen_menu.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
