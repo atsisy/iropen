@@ -2,12 +2,11 @@
 #include <Windows.h>
 #include <deque>
 #include <algorithm>
-#include "checker.hpp"
 #include "types.hpp"
 #include "main_window.hpp"
 #include "paint_data.hpp"
-#include "gesture.hpp"
 #include "resource.h"
+#include "message_handler.hpp"
 
 uptr<MainWindow> g_main_window;
 
@@ -16,118 +15,58 @@ LRESULT CALLBACK mainWindowProc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM
 	static POINT touch_point;
 	static std::deque<uptr<BitPaintData>> paint_data_queue;
 	static bool is_press;
-	static InputChecker checker;
-	static GestureDecoder gesture_decoder;
+	static MessageHandler message_handler;
 
 	switch (message) {
 
 	case WM_GESTURE:
-		return gesture_decoder(h_wnd, message, w_param, l_param);
-	break;
+		return message_handler.gesture_handler(h_wnd, message, w_param, l_param);
 	case WM_POINTERDOWN:
-		if (checker.is_pen(w_param))
-		{
-			int pressure;
-			POINTER_PEN_INFO info;
-			GetPointerPenInfo(GET_POINTERID_WPARAM(w_param), &info);
-			pressure = info.pressure;
-
-			is_press = true;
-			touch_point.x = LOWORD(l_param);
-			touch_point.y = HIWORD(l_param);
-			paint_data_queue.push_back(uptr<BitPaintData>(new BitPaintData(touch_point, pressure)));
-			InvalidateRect(h_wnd, NULL, TRUE);
-		}
+		message_handler.pointer_down_handler(
+			w_param,
+			l_param,
+			h_wnd,
+			&is_press,
+			&touch_point,
+			&paint_data_queue
+		);
 		break;
+
 	case WM_POINTERUPDATE:
-		if (is_press)
-		{
-			u16_t pressure;
-			POINTER_PEN_INFO info;
-			GetPointerPenInfo(GET_POINTERID_WPARAM(w_param), &info);
-			pressure = info.pressure;
-
-			touch_point.x = LOWORD(l_param);
-			touch_point.y = HIWORD(l_param);
-			if (ScreenToClient(h_wnd, &touch_point) == 0)
-			{
-				/*
-				*エラー
-				*/
-			}
-
-			paint_data_queue.push_back(uptr<BitPaintData>(new BitPaintData(touch_point, pressure)));
-			InvalidateRect(h_wnd, NULL, TRUE);
-
-		}
+		message_handler.pointer_update_handler(
+			h_wnd,
+			w_param,
+			l_param,
+			is_press,
+			&paint_data_queue
+		);
 		break;
+
 	case WM_ERASEBKGND:
 		return 1;
 	case WM_CREATE:
-	{
-		int value = GetSystemMetrics(SM_DIGITIZER);
-		if (value == 0)
-		{
-			MessageBoxW(h_wnd, L"タッチ機能に対応していません。", L"タッチ機能チェック", MB_OK);
-			exit(0);
-		}
-		if (value & NID_READY)
-		{
-
-		}
-		if (value & NID_MULTI_INPUT)
-		{
-			MessageBoxW(h_wnd, L"マルチタッチに対応しています。", L"タッチ機能チェック", MB_OK);
-		}
-		if (value & NID_INTEGRATED_TOUCH)
-		{
-
-		}
-	}
-
-	break;
+		message_handler.create_handler(h_wnd);
+		break;
 	
 	case WM_PAINT:
-	{
-		if (is_press)
-		{
-			PAINTSTRUCT ps;
-			HDC hdc;
-			
-			hdc = BeginPaint(h_wnd, &ps);
-			
-			while (!paint_data_queue.empty())
-			{
-				uptr<BitPaintData> bpd = std::move(*std::make_move_iterator(std::begin(paint_data_queue)));
-				u8_t r = (bpd->pressure / 70) / 2;
-				Ellipse(hdc, bpd->point.x - r, bpd->point.y - r, bpd->point.x + r, bpd->point.y + r);
-				paint_data_queue.pop_front();
-			}
+		message_handler.paint_handler(h_wnd, is_press, &paint_data_queue);
+		break;
 
-			EndPaint(h_wnd, &ps);
-		}
-	}
-	break;
-	
 	case WM_POINTERLEAVE:
 	case WM_POINTERUP:
-		if (checker.is_pen(w_param))
-		{
-			UnregisterTouchWindow(h_wnd);
-			is_press = false;
-		}
+		message_handler.pointer_leave_or_up_handler(w_param, &is_press);
 		break;
+	
 	case WM_SIZE:
 	case WM_MOVE:
 		g_main_window->update_window_info(h_wnd);
 		break;
-	case WM_CLOSE:
 
+	case WM_CLOSE:
 		DestroyWindow(h_wnd);
 		break;
 
 	case WM_DESTROY:
-
 		PostQuitMessage(0);
 		break;
 	}
