@@ -1,17 +1,20 @@
 ﻿#include <Windows.h>
 #include "message_handler.hpp"
 
-void MessageHandler::pointer_down_handler(WPARAM w_param, LPARAM l_param, HWND h_wnd, bool *is_press, POINT *touch_point, std::deque<uptr<BitPaintData>> *queue)
+BezieredPaintDataSet bezier(RawPaintDataSet data_set);
+
+void MessageHandler::pointer_down_handler(WPARAM w_param, LPARAM l_param, HWND h_wnd, bool *is_press, std::deque<BitPaintData> *queue)
 {
 	if (checker.is_pen(w_param))
 	{
+		POINT point;
 		POINTER_PEN_INFO info;
 		GetPointerPenInfo(GET_POINTERID_WPARAM(w_param), &info);
 
 		*is_press = true;
-		touch_point->x = LOWORD(l_param);
-		touch_point->y = HIWORD(l_param);
-		queue->push_back(uptr<BitPaintData>(new BitPaintData(*touch_point, info.pressure)));
+		point.x = LOWORD(l_param);
+		point.y = HIWORD(l_param);
+		queue->push_back(BitPaintData(point, info.pressure));
 
 		if (queue->size() >= 4)
 		{
@@ -55,7 +58,7 @@ void MessageHandler::create_handler(HWND h_wnd)
 	}
 }
 
-void MessageHandler::pointer_update_handler(HWND h_wnd, WPARAM w_param, LPARAM l_param, bool is_press, std::deque<uptr<BitPaintData>> *queue)
+void MessageHandler::pointer_update_handler(HWND h_wnd, WPARAM w_param, LPARAM l_param, bool is_press, std::deque<BitPaintData> *queue)
 {
 	if (is_press)
 	{
@@ -74,28 +77,54 @@ void MessageHandler::pointer_update_handler(HWND h_wnd, WPARAM w_param, LPARAM l
 			*/
 		}
 
-		queue->push_back(uptr<BitPaintData>(new BitPaintData(point, pressure)));
-		InvalidateRect(h_wnd, NULL, TRUE);
+		queue->push_back(BitPaintData(point, pressure));
 
+		if (queue->size() >= 4)
+		{
+			InvalidateRect(h_wnd, NULL, TRUE);
+		}
 	}
 }
 
-void MessageHandler::paint_handler(HWND h_wnd, bool is_press, std::deque<uptr<BitPaintData>> *queue)
+void MessageHandler::paint_handler(HWND h_wnd, bool is_press, std::deque<BitPaintData> *queue)
 {
+
+	static POINT last = { 0, 0 };
+
 	if (is_press)
 	{
 		PAINTSTRUCT ps;
 		HDC hdc;
+		u8_t i, size;
 
 		hdc = BeginPaint(h_wnd, &ps);
 
-		while (!queue->empty())
+		RawPaintDataSet data_set;
+
+		for (i = 0; i < 4; ++i)
 		{
-			uptr<BitPaintData> bpd = std::move(*std::make_move_iterator(std::begin(*queue)));
-			u8_t r = (bpd->pressure / 70) / 2;
-			Ellipse(hdc, bpd->point.x - r, bpd->point.y - r, bpd->point.x + r, bpd->point.y + r);
+			data_set[i] = queue->front();
 			queue->pop_front();
 		}
+
+		BezieredPaintDataSet &&paint_data = bezier(data_set);
+
+		for (i = 1; i <= BEZIERED_PAINT_DATA_SET_SIZE; ++i)
+		{
+			if (i == 1)
+			{
+				MoveToEx(hdc, last.x, last.y, nullptr);
+				LineTo(hdc, paint_data.at(0).point.x, paint_data.at(0).point.y);
+				MoveToEx(hdc, paint_data.at(0).point.x, paint_data.at(0).point.y, nullptr);
+			}
+			else
+			{
+				LineTo(hdc, paint_data.at(i).point.x, paint_data.at(i).point.y);
+				MoveToEx(hdc, paint_data.at(i).point.x, paint_data.at(i).point.y, nullptr);
+			}
+		}
+
+		last = paint_data.back().point;
 
 		EndPaint(h_wnd, &ps);
 	}

@@ -33,6 +33,9 @@
     <ClCompile Include="message_handler_src.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="bezier.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="checker.hpp">

@@ -139,6 +139,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="bezier.cpp" />
     <ClCompile Include="checker_src.cpp" />
     <ClCompile Include="gesture_src.cpp" />
     <ClCompile Include="main.cpp" />

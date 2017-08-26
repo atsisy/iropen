@@ -12,8 +12,7 @@ uptr<MainWindow> g_main_window;
 
 LRESULT CALLBACK mainWindowProc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM l_param)
 {
-	static POINT touch_point;
-	static std::deque<uptr<BitPaintData>> paint_data_queue;
+	static std::deque<BitPaintData> paint_data_queue;
 	static bool is_press;
 	static MessageHandler message_handler;
 
@@ -27,7 +26,6 @@ LRESULT CALLBACK mainWindowProc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM
 			l_param,
 			h_wnd,
 			&is_press,
-			&touch_point,
 			&paint_data_queue
 		);
 		break;
@@ -58,6 +56,7 @@ LRESULT CALLBACK mainWindowProc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM
 		break;
 	
 	case WM_SIZE:
+		[[FALLT]];
 	case WM_MOVE:
 		g_main_window->update_window_info(h_wnd);
 		break;
